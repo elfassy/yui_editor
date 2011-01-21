@@ -78,8 +78,13 @@ http://developer.yahoo.com/yui/examples/editor/toolbar_editor.html
 
 Installation
 ============
+Rails >3
+rails plugin install git://github.com/larsklevan/yui_editor.git
 
+Rails <3
 script/plugin install git://github.com/larsklevan/yui_editor.git
+
+note: use the correct github branch.
 
 Feedback
 ========
