@@ -30,32 +30,45 @@ module YuiEditor
     def yui_editor_init
       options = YuiEditor.default_options.merge(@yui_editor_options || {})
 
-      version = options.delete(:version) || '2.6.0'
+      version = options.delete(:version) || '2.8.2r1'
       editor_selector = options.delete(:selector) || 'rich_text_editor'
       editor_class = options.delete(:simple_editor) ? 'SimpleEditor' : 'Editor'
       callbacks = (options.delete(:editor_extension_callbacks) || '')
       body_class = options.delete(:body_class) || 'yui-skin-sam'
-      base_uri = options.delete(:javascript_base_uri) || '//yui.yahooapis.com'
+      base_uri = options.delete(:javascript_base_uri) || 'http://yui.yahooapis.com'
       additional_yui_javascripts = options.delete(:additional_yui_javascripts) || []
+      combo = options.delete(:combine_scripts) || false
 
       compression = RAILS_ENV == 'development' ? '' : '-min'
 
       result = ''
       result << stylesheet_link_tag("#{base_uri}/#{version}/build/assets/skins/sam/skin.css") + "\n" if body_class == 'yui-skin-sam'
-      
-      result << javascript_include_tag("#{base_uri}/#{version}/build/yahoo-dom-event/yahoo-dom-event.js") + "\n"
+
       yui_scripts = %w{element/element container/container_core}
       yui_scripts += %w{menu/menu button/button} unless editor_class == 'SimpleEditor'
       yui_scripts << 'editor/editor'
       yui_scripts += additional_yui_javascripts
-      yui_scripts.each do |script|
-        result << javascript_include_tag("#{base_uri}/#{version}/build/#{script}#{compression}.js") + "\n"
+      if combo
+        # combo only available for yahoo - not google
+        scripts = "http://yui.yahooapis.com/combo?#{version}/build/yahoo-dom-event/yahoo-dom-event.js"
+        yui_scripts.each do |script|
+          scripts += "&#{version}/build/#{script}#{compression}.js"
+        end
+        result << javascript_include_tag("#{scripts}") + "\n"
+      else
+        result << javascript_include_tag("#{base_uri}/#{version}/build/yahoo-dom-event/yahoo-dom-event.js") + "\n"
+        yui_scripts.each do |script|
+          result << javascript_include_tag("#{base_uri}/#{version}/build/#{script}#{compression}.js") + "\n"
+        end
       end
       (options[:editor_extension_javascripts] || []).each do |js|
         result << javascript_include_tag(js) + "\n"
       end
 
       js = <<JAVASCRIPT
+function getAuthKey() {
+  return "#{form_authenticity_token}";
+}
 YAHOO.util.Event.onDOMReady(function(){
   new YAHOO.util.Element(document.getElementsByTagName('body')[0]).addClass('#{body_class}');
   
